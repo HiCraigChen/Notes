@@ -1,0 +1,32 @@
+create table words(id string, text string);
+
+insert into table words
+select get_json_object(line, '$.id_str') as id,
+get_json_object(line, '$.text') as text from json_o;
+
+create table words_split as select id as id, split(text,' ') as words from words;
+
+create table tweet as 
+select id as id, word as word
+from words_split
+LATERAL VIEW explode(words) word as word;
+
+create table dictionary(word string, rating int)
+row format delimited
+fields terminated by '\t'
+lines terminated by '\n';
+
+load data local inpath 'Desktop/Dictionary.txt' overwrite into table dictionary;
+
+create table word_join as select tweet.id, tweet.word, dictionary.rating from tweet left outer join dictionary on(tweet.word = dictionary.word);
+
+create table post_rate as select id, avg(rating) as rating from word_join group by word_join.id;
+
+create table info as select get_json_object(line, '$.created_at') as time,
+get_json_object(line, '$.id') as id,
+get_json_object(line, '$.user.name') as name
+from json_o
+
+create table post_info as
+select from_unixtime(unix_timestamp(concat_ws('/',split(info.time,' ')[5],split(info.time,' ')[1],split(info.time,' ')[2]), 'yyyy/MMM/dd'),'yyyy-MM-dd') as time,
+ info.id, info.name, post_rate.rating from info left join post_rate on(info.id = post_rate.id);

@@ -1,0 +1,14 @@
+create table words_split_Lcase as select id as id, split(LCASE(regexp_replace(text, '\!|\,|\\.','')),' ') as words from words;
+
+create table tweet_Lcase as 
+select id as id, word as word
+from words_split_Lcase
+LATERAL VIEW explode(words) word as word;
+
+create table word_join_Lcase as select tweet_Lcase.id, tweet_Lcase.word, dictionary.rating from tweet_Lcase left outer join dictionary on(tweet_Lcase.word = dictionary.word);
+
+create table post_rate_Lcase as select id, avg(rating) as rating from word_join_Lcase group by word_join_Lcase.id;
+
+create table post_info_Lcase as
+select from_unixtime(unix_timestamp(concat_ws('/',split(info.time,' ')[5],split(info.time,' ')[1],split(info.time,' ')[2]), 'yyyy/MMM/dd'),'yyyy-MM-dd') as time,
+ info.id, info.name, post_rate_Lcase.rating from info left join post_rate_Lcase on(info.id = post_rate_Lcase.id);

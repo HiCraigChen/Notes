@@ -1,0 +1,10 @@
+create table location(location string)
+insert into table location select get_json_object(line, '$.user.location') as location from json_o;
+
+create table location_freq as
+select location as location, count(location) as location_count
+from location
+group by location
+sort by location_count DESC;
+
+select * from location_freq;

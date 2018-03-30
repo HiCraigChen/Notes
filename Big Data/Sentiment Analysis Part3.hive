@@ -1,0 +1,9 @@
+create table followers(name string, followers int);
+insert into table followers select get_json_object(line, '$.user.name') as name, get_json_object(line, '$.user.followers_count') as followers from json_o;  
+
+
+select name, max(followers) as follower_count
+from followers
+group by name
+sort by follower_count DESC
+limit 10;

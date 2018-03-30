@@ -1,0 +1,12 @@
+create table json_o(line string);
+load data local inpath 'Desktop/tweet_m.json' overwrite into table json_o;
+
+create table hash as select get_json_object(line, '$.entities.hashtags.text') as tag from json_o;
+
+create table hash_tags as select explode(split(substring(tag,2,LENGTH(tag)-2),',')) as tag from hash where not tag='NULL'
+
+create table tag_freq as select substring(tag,2,LENGTH(tag)-2) as tag, count(tag) as count from hash_tags group by tag;
+
+select * from tag_freq order by count DESC;
+
+
